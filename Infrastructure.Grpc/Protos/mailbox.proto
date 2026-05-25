@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+option csharp_namespace = "Services";
+
+package services.mailbox.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+service MailboxApi {
+  rpc GetMailbox (GetMailboxRequest) returns (MailboxResponse);
+  rpc GetUser (GetUserRequest) returns (GetUserResponse);
+  rpc RegisterUser (RegisterUserRequest) returns (google.protobuf.Empty);
+  rpc BeginRealtimeAuth (BeginRealtimeAuthRequest) returns (BeginRealtimeAuthResponse);
+  rpc CompleteRealtimeAuth (CompleteRealtimeAuthRequest) returns (CompleteRealtimeAuthResponse);
+}
+
+message GetMailboxRequest {
+  string user_id = 1;
+}
+
+message GetUserRequest {
+  string mailbox = 1;
+}
+
+message RegisterUserRequest {
+  string user_id = 1;
+  string auth_alg = 2;
+  bytes public_key = 3;
+}
+
+message BeginRealtimeAuthRequest {
+  string user_id = 1;
+}
+
+message BeginRealtimeAuthResponse {
+  string nonce = 1;
+  google.protobuf.Timestamp exp_at = 2;
+}
+
+message CompleteRealtimeAuthRequest {
+  string user_id = 1;
+  string nonce = 2;
+  string alg = 3;
+  bytes signature = 4;
+}
+
+message CompleteRealtimeAuthResponse {
+  repeated MailboxResponse mailboxes = 1;
+}
+
+message MailboxResponse {
+  string mailbox_address = 1;
+  google.protobuf.Timestamp refresh_after_utc = 2;
+}
+
+message GetUserResponse {
+  string user_id = 1;
+}

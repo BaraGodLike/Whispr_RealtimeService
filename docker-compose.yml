@@ -1,0 +1,64 @@
+services:
+  realtime-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: whispr-realtime-service
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      Realtime__ServiceName: ${REALTIME_SERVICE_NAME}
+      Realtime__NodeId: ${REALTIME_NODE_ID}
+      Redis__Configuration: redis:6379
+      MailboxGrpc__Address: ${MAILBOX_GRPC_ADDRESS}
+      RelayGrpc__Address: ${RELAY_GRPC_ADDRESS}
+      Kafka__BootstrapServers: ${KAFKA_BOOTSTRAP_SERVERS}
+      Kafka__Topic: ${KAFKA_TOPIC}
+      Kafka__GroupIdPrefix: ${KAFKA_GROUP_ID_PREFIX}
+    ports:
+      - "${REALTIME_SERVICE_PORT}:8080"
+    networks:
+      - whispr
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: whispr-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - whispr
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: whispr-redisinsight
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "${REDIS_INSIGHT_PORT}:5540"
+    volumes:
+      - redisinsight-data:/data
+    networks:
+      - whispr
+
+volumes:
+  redis-data:
+  redisinsight-data:
+
+networks:
+  whispr:
+    driver: bridge
