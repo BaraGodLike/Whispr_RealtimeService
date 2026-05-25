@@ -1,0 +1,10 @@
+.git
+.idea
+**/bin
+**/obj
+**/TestResults
+**/*.user
+**/*.suo
+**/*.cache
+Dockerfile.*
+docker-compose.override.yml

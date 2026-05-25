@@ -128,8 +128,23 @@ public sealed class RealtimeWebSocketEndpoint(
             await connectionRegistry.CloseAsync(connection.ConnectionId, WebSocketCloseStatus.PolicyViolation, "Authentication failed.", cancellationToken);
             return false;
         }
-        catch (Grpc.Core.RpcException)
+        catch (Grpc.Core.RpcException rpcException) when (rpcException.StatusCode is
+                   Grpc.Core.StatusCode.InvalidArgument or
+                   Grpc.Core.StatusCode.AlreadyExists)
         {
+            logger.LogWarning(
+                "Realtime websocket upstream validation failed. GrpcStatusCode={GrpcStatusCode}",
+                rpcException.StatusCode);
+
+            await SendErrorAsync(connection.ConnectionId, RealtimeErrorCodes.InvalidRequest, "Request validation failed.", cancellationToken);
+            return true;
+        }
+        catch (Grpc.Core.RpcException rpcException)
+        {
+            logger.LogWarning(
+                "Realtime websocket upstream call failed. GrpcStatusCode={GrpcStatusCode}",
+                rpcException.StatusCode);
+
             await SendErrorAsync(connection.ConnectionId, RealtimeErrorCodes.UpstreamUnavailable, "Upstream service is unavailable.", cancellationToken);
             return true;
         }

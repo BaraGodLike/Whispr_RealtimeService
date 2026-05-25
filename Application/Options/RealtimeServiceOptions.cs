@@ -3,10 +3,11 @@ namespace Application.Options;
 public sealed class RealtimeServiceOptions
 {
     public const string SectionName = "Realtime";
+    public const string AutoNodeIdValue = "auto";
 
     public string ServiceName { get; set; } = "realtime-service";
 
-    public string NodeId { get; set; } = "realtime-1";
+    public string NodeId { get; set; } = AutoNodeIdValue;
 
     public TimeSpan RedisLeaseTtl { get; set; } = TimeSpan.FromSeconds(60);
 

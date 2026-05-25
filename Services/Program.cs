@@ -8,6 +8,7 @@ using Infrastructure.Redis;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using Realtime.Services.Configuration;
 using Realtime.Services.Connections;
 using Realtime.Services.HostedServices;
 using Realtime.Services.Messaging;
@@ -32,6 +33,8 @@ builder.Services
     .Validate(options => options.RelayGetMessageRetry.MaxAttempts >= 1, "Relay retry attempts must be at least 1.")
     .ValidateOnStart();
 
+builder.Services.AddSingleton<IPostConfigureOptions<RealtimeServiceOptions>, RealtimeOptionsConfiguration>();
+
 builder.Services.AddApplication();
 builder.Services.AddRedisInfrastructure(builder.Configuration);
 builder.Services.AddGrpcInfrastructure(builder.Configuration);
@@ -46,6 +49,7 @@ builder.Services.AddScoped<RealtimeWebSocketEndpoint>();
 var app = builder.Build();
 
 var realtimeOptions = app.Services.GetRequiredService<IOptions<RealtimeServiceOptions>>().Value;
+var logScopeFactory = app.Services.GetRequiredService<IRealtimeLogScopeFactory>();
 
 app.UseWebSockets(new WebSocketOptions
 {
@@ -58,4 +62,7 @@ app.Map("/ws", static async (HttpContext context, RealtimeWebSocketEndpoint endp
     await endpoint.HandleAsync(context);
 });
 
-app.Run();
+using (logScopeFactory.BeginScope(app.Logger))
+{
+    app.Run();
+}
